@@ -23,6 +23,7 @@ namespace NetworkProject
         int numberOfPlayers, port;
         bool isserver;
         IPAddress serverIP;
+        Socket newClient;
 
         Socket tempServer;
         IPAddress[] a;
@@ -52,7 +53,9 @@ namespace NetworkProject
             {
                 //joined as client (initialize the TCP client socket, connect to Servers IP and wait for the server to start the game
                 btnStartGame.Enabled = false;
+                //to be added in a thread to not hault the program
                 JoinServer(IP);
+
                 Thread t = new Thread(RecieveDataFromServer);
                 t.Start();
             }
@@ -85,24 +88,47 @@ namespace NetworkProject
             byteArr = Encoding.ASCII.GetBytes(a[a.Length - 1].ToString());
             currentSocket.Send(byteArr);
 
+            /*
+            //not yet tested
+            while(true)
+            {
+                byteArr = new byte[1024];
+                int num=currentSocket.Receive(byteArr);
+                if (num < 6)
+                    break;
+                Client client = new Client(Encoding.ASCII.GetString(byteArr), numberOfPlayers);
+                numberOfPlayers++;
+                clients.Add(client);
+                listBox1.Items.Add("Player " + numberOfPlayers + ": " + client.IP);
+            }
+            
+            Thread t = new Thread(new ParameterizedThreadStart(RecieveDataFromServer));
+            t.Start(int.Parse(Encoding.ASCII.GetString(byteArr)));*/
         }
 
-        void RecieveDataFromServer()
+        void RecieveDataFromServer(/*object obj*/)
         {
             //this function in different thread as it will halt the application during recieving from server
-            int numberOfPlayers = -1;
+            int numberOfPlayers = -1/*(int)obj*/;
             
             //write code to recieve (numberOfPlayers)
 
-            //byte[] arr = new byte[1024];
-            //int x = currentSocket.Receive(arr);
-            //numberOfPlayers = int.Parse(Encoding.ASCII.GetString(arr).Substring(0, x));
+            byte[] arr = new byte[1024];
+            int x = currentSocket.Receive(arr);
+            numberOfPlayers = int.Parse(Encoding.ASCII.GetString(arr,0,x));
 
             GenerateSnakesAndLadders();
             char[,] board = GenerateBoard(snakes, ladders);
             GamePlayingScreen gpc = new GamePlayingScreen(board, snakes, ladders, null, numberOfPlayers, currentSocket, false);
             gpc.Show();
-            this.Visible = false;
+            if (this.InvokeRequired)
+                this.Invoke(new MethodInvoker(delegate
+                {
+                    this.Visible = false;
+
+                }));
+            else
+                this.Visible = false;
         }
 
 
@@ -143,13 +169,23 @@ namespace NetworkProject
             //create an object from class Client and fill in its information
             //assign a rank for this created object (which is the client index in list) and add to list of clients
             //where Client is a class contains all information about client (mentioned in the project document)
-            Socket newClient = currentSocket.Accept();
+            newClient = currentSocket.Accept();
             byte[] byteArr = new byte[1024];
             int num = newClient.Receive(byteArr);
             string temp = Encoding.ASCII.GetString(byteArr, 0, num);
             Client newclient = new Client(temp, numberOfPlayers);
             clients.Add(newclient);
             numberOfPlayers++;
+
+            /*
+            //send players IP to all clients
+            foreach(Client client in clients)
+            {
+                byteArr = Encoding.ASCII.GetBytes(client.IP);
+                currentSocket.Send(byteArr);
+            }
+            */
+
             //to access control from a thread 
             if (listBox1.InvokeRequired)
                 listBox1.Invoke(new MethodInvoker(delegate
@@ -165,13 +201,23 @@ namespace NetworkProject
         {
             //stop broadcasting the IP
             tmrBroadCastIP.Stop();
-            
+
+            byte[] arr = Encoding.ASCII.GetBytes(clients.Count.ToString());
+            newClient.Send(arr);
+
             //generate board
 
             GenerateSnakesAndLadders();
             char[,] board = GenerateBoard(snakes, ladders);
             GamePlayingScreen gpc = new GamePlayingScreen(board, snakes, ladders, clients, clients.Count, currentSocket, true);
             gpc.Show();
+            if (this.InvokeRequired)
+                this.Invoke(new MethodInvoker(delegate
+                {
+                    this.Visible = false;
+
+                }));
+            else
             this.Visible = false;
         }
         Random r;
