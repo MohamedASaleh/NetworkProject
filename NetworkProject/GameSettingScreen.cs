@@ -43,24 +43,27 @@ namespace NetworkProject
             numberOfPlayers = 0;
             port = 15000;
             InitializeComponent();
-            tempServer = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-            a = Dns.GetHostAddresses(Dns.GetHostName());
-            GEp = new IPEndPoint(a[a.Length - 1], port);
-            tempServer.Bind(GEp);
-            tempServer.EnableBroadcast = true;
+           
 
             if (!isServer)
             {
                 //joined as client (initialize the TCP client socket, connect to Servers IP and wait for the server to start the game
                 btnStartGame.Enabled = false;
                 //to be added in a thread to not hault the program
-                JoinServer(IP);
+                Thread t = new Thread(new ParameterizedThreadStart(JoinServer));
+                t.Start(IP);
 
-                Thread t = new Thread(RecieveDataFromServer);
-                t.Start();
+                //Thread t = new Thread(RecieveDataFromServer);
+                //t.Start();
             }
             else
             {
+                tempServer = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+                a = Dns.GetHostAddresses(Dns.GetHostName());
+                GEp = new IPEndPoint(a[a.Length - 1], port);
+                tempServer.Bind(GEp);
+                tempServer.EnableBroadcast = true;
+
                 //joined as server (start the TCP server socket, start UDP server socket to broadcasting the servers IP and finally accept client sockets using the TCP socket
                 InitializeServer();
                 tmrBroadCastIP.Start();
@@ -77,8 +80,9 @@ namespace NetworkProject
         ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
         //Client Function implementation
-        void JoinServer(IPAddress IP)
+        void JoinServer(object obj)
         {
+            IPAddress IP = (IPAddress)obj;
             //write code to initialize currentSocket to be client socket and connect to server IP
             currentSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             IPEndPoint iep = new IPEndPoint(IP, port);
@@ -88,35 +92,50 @@ namespace NetworkProject
             byteArr = Encoding.ASCII.GetBytes(a[a.Length - 1].ToString());
             currentSocket.Send(byteArr);
 
-            /*
+            IPEndPoint tempiep = new IPEndPoint(IPAddress.Any, 11000);
+            tempServer = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            tempServer.Bind(tempiep);
+            EndPoint ep = (EndPoint)tempiep;
+
             //not yet tested
-            while(true)
+            while (true)
             {
                 byteArr = new byte[1024];
-                int num=currentSocket.Receive(byteArr);
-                if (num < 6)
+                               
+                int recv = tempServer.ReceiveFrom(byteArr, ref ep);
+                if (recv < 4)
                     break;
-                Client client = new Client(Encoding.ASCII.GetString(byteArr), numberOfPlayers);
-                numberOfPlayers++;
-                clients.Add(client);
-                listBox1.Items.Add("Player " + numberOfPlayers + ": " + client.IP);
+                string temp = Encoding.ASCII.GetString(byteArr, 0, recv);
+                Client client = new Client(temp, numberOfPlayers);
+                if (!clients.Contains(client))
+                {
+                    numberOfPlayers++;
+                    clients.Add(client);
+                    if (listBox1.InvokeRequired)
+                        listBox1.Invoke(new MethodInvoker(delegate
+                        {
+                            listBox1.Items.Add("Player " + numberOfPlayers + ": " + client.IP);
+                        }));
+                    else
+                        listBox1.Items.Add("Player " + numberOfPlayers + ": " + client.IP);
+                }
             }
-            
+
             Thread t = new Thread(new ParameterizedThreadStart(RecieveDataFromServer));
-            t.Start(int.Parse(Encoding.ASCII.GetString(byteArr)));*/
+            t.Start(int.Parse(Encoding.ASCII.GetString(byteArr)));
         }
 
-        void RecieveDataFromServer(/*object obj*/)
+        void RecieveDataFromServer(object obj)
         {
             //this function in different thread as it will halt the application during recieving from server
-            int numberOfPlayers = -1/*(int)obj*/;
-            
-            //write code to recieve (numberOfPlayers)
+            int numberOfPlayers = (int)obj;
 
+            //write code to recieve (numberOfPlayers)
+            /*
             byte[] arr = new byte[1024];
             int x = currentSocket.Receive(arr);
             numberOfPlayers = int.Parse(Encoding.ASCII.GetString(arr,0,x));
-
+            */
             GenerateSnakesAndLadders();
             char[,] board = GenerateBoard(snakes, ladders);
             GamePlayingScreen gpc = new GamePlayingScreen(board, snakes, ladders, null, numberOfPlayers, currentSocket, false);
@@ -177,14 +196,12 @@ namespace NetworkProject
             clients.Add(newclient);
             numberOfPlayers++;
 
-            /*
             //send players IP to all clients
-            foreach(Client client in clients)
+            foreach (Client client in clients)
             {
                 byteArr = Encoding.ASCII.GetBytes(client.IP);
-                currentSocket.Send(byteArr);
+                tempServer.SendTo(byteArr, new IPEndPoint(IPAddress.Broadcast, 11000));
             }
-            */
 
             //to access control from a thread 
             if (listBox1.InvokeRequired)
@@ -203,7 +220,7 @@ namespace NetworkProject
             tmrBroadCastIP.Stop();
 
             byte[] arr = Encoding.ASCII.GetBytes(clients.Count.ToString());
-            newClient.Send(arr);
+            tempServer.SendTo(arr, new IPEndPoint(IPAddress.Broadcast, 11000));
 
             //generate board
 
@@ -218,7 +235,7 @@ namespace NetworkProject
 
                 }));
             else
-            this.Visible = false;
+                this.Visible = false;
         }
         Random r;
 
@@ -284,7 +301,7 @@ namespace NetworkProject
         //        byte[] arr = Encoding.ASCII.GetBytes(numberOfPlayers.ToString());
 
         //        currentSocket.Send(arr);
-                
+
         //    }
         //    else
         //    {
