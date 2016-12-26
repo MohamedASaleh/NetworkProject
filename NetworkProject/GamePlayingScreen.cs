@@ -23,7 +23,8 @@ namespace NetworkProject
         Socket currentPlayer;
         bool IsServer;
         Bitmap Board;
-        public GamePlayingScreen(char[,] board, Dictionary<Point, int> snakes, Dictionary<Point, int> ladders, List<Client> clients,int numberOfPlayers,Socket me,bool Server)
+
+        public GamePlayingScreen(char[,] board, Dictionary<Point, int> snakes, Dictionary<Point, int> ladders, List<Client> clients, int numberOfPlayers, Socket me, bool Server)
         {
             InitializeComponent();
             Clients = clients;
@@ -31,21 +32,18 @@ namespace NetworkProject
             Snakes = snakes;
             Ladders = ladders;
             currentPlayer = me;
-
-            numberOfPlayers = 5;
+            numberOfPlayers = 1;
             PlayersLocation = new List<Point>();
             for (int i = 0; i < numberOfPlayers; i++)
             {
                 PlayersLocation.Add(new Point(0, 0));
             }
-
             GeneratePlayerList(numberOfPlayers);
             IsServer = Server;
-
             DoubleBuffered = true;
             SetStyle(ControlStyles.OptimizedDoubleBuffer, true);
             DrawBoard();
-
+            DrawAllPlayers();
             if (IsServer)
             {
                 btnRollTheDice.Enabled = true;
@@ -62,8 +60,6 @@ namespace NetworkProject
                 t.Start();
             }
         }
-
-
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         /////////////////////////////////////////////////////////////////////////////////////////////////////////DRAWING FUNCTIONS/////////////////////////////////////////////////////////////////////////////////////////////
         ///////////////////////////////////////////////////////////////////////////////////////////////YOU DON'T NEED TO WRITE ANY CODE HERE///////////////////////////////////////////////////////////////////////////////////
@@ -71,7 +67,6 @@ namespace NetworkProject
         {
             //maximum number of players is 8
             numberOfPlayers = numberOfPlayers > 8 ? 8 : numberOfPlayers;
-
             for (int i = 0; i < numberOfPlayers; i++)
             {
                 Label label = new Label();
@@ -82,9 +77,7 @@ namespace NetworkProject
                 label.Size = new System.Drawing.Size(76, 19);
                 label.TabIndex = 0;
                 label.Text = "Player " + (i + 1);
-
                 this.groupBox1.Controls.Add(label);
-
                 PictureBox pictureBox = new PictureBox();
                 pictureBox.Location = new System.Drawing.Point(30, 55 + i * 50);
                 pictureBox.Name = "pictureBox2";
@@ -106,13 +99,12 @@ namespace NetworkProject
         List<Color> PlayerColors = new List<Color>();
         void GeneratePlayerColor(int index)
         {
-            PlayerColors.Add(Color.FromArgb(index*200%255,index*300%255,index*400%255));
+            PlayerColors.Add(Color.FromArgb(index * 200 % 255, index * 300 % 255, index * 400 % 255));
         }
         void DrawBoard()
         {
-            Bitmap bmp = new Bitmap(pictureBox1.Size.Width,pictureBox1.Size.Height);
+            Bitmap bmp = new Bitmap(pictureBox1.Size.Width, pictureBox1.Size.Height);
             Graphics g = Graphics.FromImage(bmp);
-
             for (int i = 0; i < 10; i++)
             {
                 for (int j = 0; j < 10; j++)
@@ -139,21 +131,18 @@ namespace NetworkProject
                 g.DrawLine(Pens.Black, new Point(0, i * 50), new Point(500, i * 50));
                 g.DrawLine(Pens.Black, new Point(i * 50, 0), new Point(i * 50, 500));
             }
-
             g.FillRectangle(Brushes.LightPink, new Rectangle(0, 0, 50, 50));
             g.FillRectangle(Brushes.LightPink, new Rectangle(0, 450, 50, 50));
-
             Bitmap snakeImg = new Bitmap("snake.png");
             foreach (var snake in Snakes)
             {
-                g.DrawImage(snakeImg, snake.Key.X * 50, (9-snake.Key.Y) * 50, 50, (snake.Value+1) * 50);
+                g.DrawImage(snakeImg, snake.Key.X * 50, (9 - snake.Key.Y) * 50, 50, (snake.Value + 1) * 50);
             }
             Bitmap ladderImg = new Bitmap("ladder.png");
             foreach (var ladder in Ladders)
             {
-                g.DrawImage(ladderImg, ladder.Key.X * 50, (9-ladder.Key.Y - ladder.Value) * 50+25, 50, ladder.Value * 50+10);
+                g.DrawImage(ladderImg, ladder.Key.X * 50, (9 - ladder.Key.Y - ladder.Value) * 50 + 25, 50, ladder.Value * 50 + 10);
             }
-
             g.DrawString("START", SystemFonts.DefaultFont, Brushes.Red, new PointF(5, 470));
             g.DrawString("END", SystemFonts.DefaultFont, Brushes.Red, new PointF(10, 20));
             Board = bmp;
@@ -170,14 +159,14 @@ namespace NetworkProject
             Graphics g = Graphics.FromImage(bmp);
             for (int i = 0; i < PlayersLocation.Count; i++)
             {
-                g.FillEllipse(new SolidBrush(PlayerColors[i]), new Rectangle(PlayersLocation[i].X * 50, (9-PlayersLocation[i].Y) * 50, 50 - i, 50 - i));
+                g.FillEllipse(new SolidBrush(PlayerColors[i]), new Rectangle(PlayersLocation[i].X * 50, (9 - PlayersLocation[i].Y) * 50, 50 - i, 50 - i));
             }
             pictureBox1.Image = bmp;
         }
 
         private void GamePlayingScreen_Paint(object sender, PaintEventArgs e)
         {
-            DrawAllPlayers();
+
         }
 
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -192,29 +181,98 @@ namespace NetworkProject
             //3- after 3 sec move the player coin
             //4- check if new location is ladder or snake using gameBoard array and modify the new location based on the value of gameBoard[y,x] = 'S' or = 'L'
             //6- update the location of currentPlayer (to be modified in drawing)
-
-
+            Random diceNumber = new Random();
+            int horray = diceNumber.Next(1, 7);
+            textBox1.Text = horray.ToString();
+            calcnewPossitions(PlayersLocation[0].X, PlayersLocation[0].Y, horray);
             if (IsServer)
             {
                 //call BroadCastLocation(0) as the server index is always 0 in the client list
                 //call BroadCastWhoseTurn(0) to see which player will play after server
             }
+
             else
             {
                 //if final location is the winning location then call the function SendTheWinnerIsMeToServer()
                 //else send the final location to server by calling SendLocationToServer()
             }
-            
         }
+        private void calcnewPossitions(int x, int y, int dice)
+        {
+            if (y % 2 == 0)
+            {
+                x += dice;
+                if (x >= 10)
+                {
+                    x = 9 - (x - 10);
+                    y += 1;
+                }
+                char next_state = gameBoard[y, x];
+                if (next_state == 'S')
+                {
+                    int num_rows = Snakes[new Point(x, y)];
+                    y -= num_rows;
+                    PlayersLocation[0] = new Point(x, y);
+                    draw_new_possitions(x, y);
+                }
+                else if (next_state == 'L')
+                {
 
+                    int num_rows = Ladders[new Point(x, y)];
+                    y += num_rows;
+                    PlayersLocation[0] = new Point(x, y);
+                    draw_new_possitions(x, y);
+                }
+                else
+                {
+                    PlayersLocation[0] = new Point(x, y);
+                    draw_new_possitions(x, y);
+                }
+            }
+            else if (y % 2 == 1)
+            {
+                x -= dice;
+                if (x < 0)
+                {
+                    x *= -1;
+                    x -= 1;
+                    y += 1;
+                }
+                char next_state = gameBoard[y, x];
+                if (next_state == 'S')
+                {
+                    int num_rows = Snakes[new Point(x, y)];
+                    y -= num_rows;
+                    PlayersLocation[0] = new Point(x, y);
+                    draw_new_possitions(x, y);
+                }
+                else if (next_state == 'L')
+                {
 
-
+                    int num_rows = Ladders[new Point(x, y)];
+                    y += num_rows;
+                    PlayersLocation[0] = new Point(x, y);
+                    draw_new_possitions(x, y);
+                }
+                else
+                {
+                    PlayersLocation[0] = new Point(x, y);
+                    draw_new_possitions(x, y);
+                }
+            }
+        }
+        private void draw_new_possitions(int x, int y)
+        {
+            Bitmap bmp = new Bitmap(pictureBox1.Size.Width, pictureBox1.Size.Height);
+            Graphics g = Graphics.FromImage(bmp);
+            g.FillEllipse(new SolidBrush(PlayerColors[0]), new Rectangle(x * 50, (9 - y) * 50, 50, 50));
+            pictureBox1.Image = bmp;
+        }
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////////////////////////////////////CLIENT///////////////////////////////////////////////////////////////////////////////////////////////////////
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
         void RecieveFromServer()
-        { 
+        {
             //use the currentPlayer socket to recieve from the server
 
             //parse the recieved message
@@ -233,7 +291,7 @@ namespace NetworkProject
         }
 
         void SendLocationToServer()
-        { 
+        {
             //use the currentPlayer socket to send to server "PlayersLocation[myIndex]"
             //message should look like this:
             //IP#PlayersLocation[myIndex]#
@@ -262,24 +320,18 @@ namespace NetworkProject
             //call BraodCastLocation(player number)
             //call BroadCastWhoseTurn(player number)
         }
-
         void BroadCastLocation(int playerNumber)
-        { 
+        {
             //here send the mssage to all clients, containing the location of PlayersLocation[playerNumber] and attach its IP and playerNumber
         }
-
         void BroadCastWhoseTurn(int playerNumber)
-        { 
+        {
             //see in the client list which 1 has the turn to play after playerNumber
             //here send the message to all clients, containing the IP only
         }
         void BroadCastTheWinnerIs(int playerNumber)
-        { 
+        {
             //send to all clients message, containing IP,playerNumber
         }
-
-
-
-
     }
 }
