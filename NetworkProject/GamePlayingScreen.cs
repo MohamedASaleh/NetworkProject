@@ -24,6 +24,10 @@ namespace NetworkProject
         Socket currentPlayer;
         bool IsServer;
         Bitmap Board;
+        IPEndPoint tempiep;
+        Socket clientUDP;
+            EndPoint ep ;
+
 
         public GamePlayingScreen(char[,] board, Dictionary<Point, int> snakes, Dictionary<Point, int> ladders, List<Client> clients, int numberOfPlayers, Socket me, bool Server)
         {
@@ -35,6 +39,10 @@ namespace NetworkProject
             currentPlayer = me;
             numberOfPlayers = 1;
             PlayersLocation = new List<Point>();
+            clientUDP = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            tempiep = new IPEndPoint(IPAddress.Any, 10000);
+            clientUDP.Bind(tempiep);
+            ep = (EndPoint)tempiep;
             for (int i = 0; i < numberOfPlayers; i++)
             {
                 PlayersLocation.Add(new Point(0, 0));
@@ -371,11 +379,7 @@ namespace NetworkProject
             //recieve message and parse it
 
 
-            IPEndPoint tempiep = new IPEndPoint(IPAddress.Any, 11000);
-            Socket clientUDP = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-
-            clientUDP.Bind(tempiep);
-            EndPoint ep = (EndPoint)tempiep;
+            
             byte[] bytearr = new byte[1024];
 
             int recv = clientUDP.ReceiveFrom(bytearr, ref ep);
@@ -415,11 +419,7 @@ namespace NetworkProject
         void BroadCastLocation(int playerNumber)
         {
             //here send the mssage to all clients, containing the location of PlayersLocation[playerNumber] and attach its IP and playerNumber
-            IPEndPoint tempiep = new IPEndPoint(IPAddress.Any, 11000);
-            Socket clientUDP = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-
-            clientUDP.Bind(tempiep);
-            EndPoint ep = (EndPoint)tempiep;
+           
             byte[] bytearr = Encoding.ASCII.GetBytes(PlayersLocation[myIndex] + ";" + currentPlayer.RemoteEndPoint.ToString() + ";" + playerNumber);
 
             clientUDP.SendTo(bytearr, new IPEndPoint(IPAddress.Broadcast, 15000));
@@ -428,11 +428,7 @@ namespace NetworkProject
         {
             //see in the client list which 1 has the turn to play after playerNumber
             //here send the message to all clients, containing the IP only
-            IPEndPoint tempiep = new IPEndPoint(IPAddress.Any, 11000);
-            Socket clientUDP = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-
-            clientUDP.Bind(tempiep);
-            EndPoint ep = (EndPoint)tempiep;
+           
             int x;
             if (playerNumber == Clients.Count - 1)
                 x = 0;
@@ -445,11 +441,7 @@ namespace NetworkProject
         void BroadCastTheWinnerIs(int playerNumber)
         {
             //send to all clients message, containing IP,playerNumber
-            IPEndPoint tempiep = new IPEndPoint(IPAddress.Any, 11000);
-            Socket clientUDP = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-
-            clientUDP.Bind(tempiep);
-            EndPoint ep = (EndPoint)tempiep;
+            
             byte[] bytearr = Encoding.ASCII.GetBytes(Clients[playerNumber].IP + ";" + playerNumber.ToString());
 
 
