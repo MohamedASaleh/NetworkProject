@@ -29,6 +29,18 @@ namespace NetworkProject
             EndPoint ep ;
 
 
+
+        public int ay7aga()
+        {   
+            for(int i = 0; i<Clients.Count; i++)
+            {
+                if (Clients[i].CurrentPlayer)
+                    return i;
+
+            }
+            return -1;
+        }
+
         public GamePlayingScreen(char[,] board, Dictionary<Point, int> snakes, Dictionary<Point, int> ladders, List<Client> clients, int numberOfPlayers, Socket me, bool Server)
         {
             InitializeComponent();
@@ -37,7 +49,7 @@ namespace NetworkProject
             Snakes = snakes;
             Ladders = ladders;
             currentPlayer = me;
-            numberOfPlayers = 1;
+           // numberOfPlayers = Clients.Count;
             PlayersLocation = new List<Point>();
             clientUDP = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
             tempiep = new IPEndPoint(IPAddress.Any, 10000);
@@ -178,7 +190,7 @@ namespace NetworkProject
 
         private void GamePlayingScreen_Paint(object sender, PaintEventArgs e)
         {
-
+            DrawAllPlayers();
         }
 
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -228,6 +240,7 @@ namespace NetworkProject
         
         private Point calcnewPositions(int x, int y, int dice)
         {
+            int index = ay7aga();
             if (y % 2 == 0)
             {
                 x += dice;
@@ -241,7 +254,7 @@ namespace NetworkProject
                 {
                     int num_rows = Snakes[new Point(x, y)];
                     y -= num_rows;
-                    PlayersLocation[0] = new Point(x, y);
+                    PlayersLocation[index] = new Point(x, y);
                     draw_new_positions(x, y);
                 }
                 else if (next_state == 'L')
@@ -249,12 +262,12 @@ namespace NetworkProject
 
                     int num_rows = Ladders[new Point(x, y)];
                     y += num_rows;
-                    PlayersLocation[0] = new Point(x, y);
+                    PlayersLocation[index] = new Point(x, y);
                     draw_new_positions(x, y);
                 }
                 else
                 {
-                    PlayersLocation[0] = new Point(x, y);
+                    PlayersLocation[index] = new Point(x, y);
                     draw_new_positions(x, y);
                 }
             }
@@ -278,7 +291,7 @@ namespace NetworkProject
                 {
                     int num_rows = Snakes[new Point(x, y)];
                     y -= num_rows;
-                    PlayersLocation[0] = new Point(x, y);
+                    PlayersLocation[index] = new Point(x, y);
                     draw_new_positions(x, y);
                 }
                 else if (next_state == 'L')
@@ -286,12 +299,12 @@ namespace NetworkProject
 
                     int num_rows = Ladders[new Point(x, y)];
                     y += num_rows;
-                    PlayersLocation[0] = new Point(x, y);
+                    PlayersLocation[index] = new Point(x, y);
                     draw_new_positions(x, y);
                 }
                 else
                 {
-                    PlayersLocation[0] = new Point(x, y);
+                    PlayersLocation[index] = new Point(x, y);
                     draw_new_positions(x, y);
                 }
             }
@@ -300,9 +313,10 @@ namespace NetworkProject
         }
         private void draw_new_positions(int x, int y)
         {
+            int index = ay7aga();
             Bitmap bmp = new Bitmap(pictureBox1.Size.Width, pictureBox1.Size.Height);
             Graphics g = Graphics.FromImage(bmp);
-            g.FillEllipse(new SolidBrush(PlayerColors[0]), new Rectangle(x * 50, (9 - y) * 50, 50, 50));
+            g.FillEllipse(new SolidBrush(PlayerColors[index]), new Rectangle(x * 50, (9 - y) * 50, 50, 50));
             pictureBox1.Image = bmp;
 
         }
