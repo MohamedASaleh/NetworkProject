@@ -238,6 +238,13 @@ namespace NetworkProject
                     x -= 1;
                     y += 1;
                 }
+                if ((x <= 0 && y >= 9) || (y > 9 && x >= 0))
+                {
+                    x = 0;
+                    y = 9;
+                    SendTheWinnerIsMeToServer();
+                    btnRollTheDice.Enabled = false; ///temp
+                }
                 char next_state = gameBoard[y, x];
                 if (next_state == 'S')
                 {
