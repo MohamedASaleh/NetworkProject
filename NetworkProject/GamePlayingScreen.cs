@@ -197,7 +197,13 @@ namespace NetworkProject
             Random diceNumber = new Random();
             int horray = diceNumber.Next(1, 7);
             textBox1.Text = horray.ToString();
+            DateTime DesiredTime = DateTime.Now.AddSeconds(3);
+            while(DateTime.Now<DesiredTime)
+            {
+                Application.DoEvents();
+            }
             Point location = calcnewPositions(PlayersLocation[0].X, PlayersLocation[0].Y, horray);
+
             Point winningLocation = new Point(0, 9);
             if (IsServer)
             {
@@ -219,6 +225,7 @@ namespace NetworkProject
                     SendLocationToServer();
             }
         }
+        
         private Point calcnewPositions(int x, int y, int dice)
         {
             if (y % 2 == 0)
@@ -293,11 +300,11 @@ namespace NetworkProject
         }
         private void draw_new_positions(int x, int y)
         {
-            Thread.Sleep(3000);
             Bitmap bmp = new Bitmap(pictureBox1.Size.Width, pictureBox1.Size.Height);
             Graphics g = Graphics.FromImage(bmp);
             g.FillEllipse(new SolidBrush(PlayerColors[0]), new Rectangle(x * 50, (9 - y) * 50, 50, 50));
             pictureBox1.Image = bmp;
+
         }
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////////////////////////////////////CLIENT///////////////////////////////////////////////////////////////////////////////////////////////////////
