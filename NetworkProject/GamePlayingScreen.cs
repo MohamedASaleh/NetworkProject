@@ -184,7 +184,7 @@ namespace NetworkProject
             Random diceNumber = new Random();
             int horray = diceNumber.Next(1, 7);
             textBox1.Text = horray.ToString();
-            calcnewPossitions(PlayersLocation[0].X, PlayersLocation[0].Y, horray);
+            calcnewPositions(PlayersLocation[0].X, PlayersLocation[0].Y, horray);
             if (IsServer)
             {
                 //call BroadCastLocation(0) as the server index is always 0 in the client list
@@ -197,7 +197,7 @@ namespace NetworkProject
                 //else send the final location to server by calling SendLocationToServer()
             }
         }
-        private void calcnewPossitions(int x, int y, int dice)
+        private void calcnewPositions(int x, int y, int dice)
         {
             if (y % 2 == 0)
             {
@@ -213,7 +213,7 @@ namespace NetworkProject
                     int num_rows = Snakes[new Point(x, y)];
                     y -= num_rows;
                     PlayersLocation[0] = new Point(x, y);
-                    draw_new_possitions(x, y);
+                    draw_new_positions(x, y);
                 }
                 else if (next_state == 'L')
                 {
@@ -221,12 +221,12 @@ namespace NetworkProject
                     int num_rows = Ladders[new Point(x, y)];
                     y += num_rows;
                     PlayersLocation[0] = new Point(x, y);
-                    draw_new_possitions(x, y);
+                    draw_new_positions(x, y);
                 }
                 else
                 {
                     PlayersLocation[0] = new Point(x, y);
-                    draw_new_possitions(x, y);
+                    draw_new_positions(x, y);
                 }
             }
             else if (y % 2 == 1)
@@ -244,7 +244,7 @@ namespace NetworkProject
                     int num_rows = Snakes[new Point(x, y)];
                     y -= num_rows;
                     PlayersLocation[0] = new Point(x, y);
-                    draw_new_possitions(x, y);
+                    draw_new_positions(x, y);
                 }
                 else if (next_state == 'L')
                 {
@@ -252,16 +252,16 @@ namespace NetworkProject
                     int num_rows = Ladders[new Point(x, y)];
                     y += num_rows;
                     PlayersLocation[0] = new Point(x, y);
-                    draw_new_possitions(x, y);
+                    draw_new_positions(x, y);
                 }
                 else
                 {
                     PlayersLocation[0] = new Point(x, y);
-                    draw_new_possitions(x, y);
+                    draw_new_positions(x, y);
                 }
             }
         }
-        private void draw_new_possitions(int x, int y)
+        private void draw_new_positions(int x, int y)
         {
             Bitmap bmp = new Bitmap(pictureBox1.Size.Width, pictureBox1.Size.Height);
             Graphics g = Graphics.FromImage(bmp);
