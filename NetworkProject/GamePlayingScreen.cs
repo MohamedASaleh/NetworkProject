@@ -43,6 +43,7 @@ namespace NetworkProject
             tempiep = new IPEndPoint(IPAddress.Any, 10000);
             clientUDP.Bind(tempiep);
             ep = (EndPoint)tempiep;
+            clientUDP.EnableBroadcast = true;
             for (int i = 0; i < numberOfPlayers; i++)
             {
                 PlayersLocation.Add(new Point(0, 0));
@@ -264,7 +265,6 @@ namespace NetworkProject
                     x = 0;
                     y = 9;
                     SendTheWinnerIsMeToServer();
-                    btnRollTheDice.Enabled = false; ///temp
                 }
                 char next_state = gameBoard[y, x];
                 if (next_state == 'S')
@@ -293,6 +293,7 @@ namespace NetworkProject
         }
         private void draw_new_positions(int x, int y)
         {
+            Thread.Sleep(3000);
             Bitmap bmp = new Bitmap(pictureBox1.Size.Width, pictureBox1.Size.Height);
             Graphics g = Graphics.FromImage(bmp);
             g.FillEllipse(new SolidBrush(PlayerColors[0]), new Rectangle(x * 50, (9 - y) * 50, 50, 50));
@@ -366,7 +367,7 @@ namespace NetworkProject
             //message should look like this:
             //IP#
             byte[] arr = Encoding.ASCII.GetBytes(Clients[myIndex].IP + "#");
-            currentPlayer.Send(arr);
+            clientUDP.SendTo(arr, new IPEndPoint(IPAddress.Broadcast, 15000));
         }
 
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -378,8 +379,6 @@ namespace NetworkProject
             Client c = (Client)client;
             //recieve message and parse it
 
-
-            
             byte[] bytearr = new byte[1024];
 
             int recv = clientUDP.ReceiveFrom(bytearr, ref ep);
@@ -420,7 +419,7 @@ namespace NetworkProject
         {
             //here send the mssage to all clients, containing the location of PlayersLocation[playerNumber] and attach its IP and playerNumber
            
-            byte[] bytearr = Encoding.ASCII.GetBytes(PlayersLocation[myIndex] + ";" + currentPlayer.RemoteEndPoint.ToString() + ";" + playerNumber);
+            byte[] bytearr = Encoding.ASCII.GetBytes(PlayersLocation[myIndex] + ";" + Clients[playerNumber].IP + ";" + playerNumber);
 
             clientUDP.SendTo(bytearr, new IPEndPoint(IPAddress.Broadcast, 15000));
         }
