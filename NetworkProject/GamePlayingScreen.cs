@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Net;
 
 namespace NetworkProject
 {
@@ -48,6 +49,8 @@ namespace NetworkProject
             {
                 btnRollTheDice.Enabled = true;
                 myIndex = 0;
+                ////////////////////////////////
+                clients[myIndex].CurrentPlayer = true;
                 for (int i = 0; i < clients.Count; i++)
                 {
                     Thread t = new Thread(new ParameterizedThreadStart(RecieveFromClients));
@@ -181,20 +184,26 @@ namespace NetworkProject
             //3- after 3 sec move the player coin
             //4- check if new location is ladder or snake using gameBoard array and modify the new location based on the value of gameBoard[y,x] = 'S' or = 'L'
             //6- update the location of currentPlayer (to be modified in drawing)
+
             Random diceNumber = new Random();
             int horray = diceNumber.Next(1, 7);
             textBox1.Text = horray.ToString();
             calcnewPositions(PlayersLocation[0].X, PlayersLocation[0].Y, horray);
+
             if (IsServer)
             {
                 //call BroadCastLocation(0) as the server index is always 0 in the client list
                 //call BroadCastWhoseTurn(0) to see which player will play after server
+                BroadCastLocation(0);
+
+                BroadCastWhoseTurn(0);
             }
 
             else
             {
                 //if final location is the winning location then call the function SendTheWinnerIsMeToServer()
                 //else send the final location to server by calling SendLocationToServer()
+
             }
         }
         private void calcnewPositions(int x, int y, int dice)
@@ -281,20 +290,51 @@ namespace NetworkProject
         void RecieveFromServer()
         {
             //use the currentPlayer socket to recieve from the server
-
+            byte[] byteArr = new byte[1024];
+            int recv = currentPlayer.Receive(byteArr);
             //parse the recieved message
+
+            string message = Encoding.ASCII.GetString(byteArr);
+
+            string[] arr;
+            arr = message.Split(';');
 
 
             //if turn message check if the IP matched with my IP
             //then check if currentPlayer boolean = true
             //enable "RollTheDice" button and play
             //else keep it disabled
+            if (!message.Contains(";"))
+            { if (Clients[myIndex].IP.Equals(message))
+                    if (Clients[myIndex].CurrentPlayer)
+                        btnRollTheDice.Enabled = true;
 
+            }
             //if location message then update the location of player n
             //update client n location
+            else if (arr.Length == 3)
+            {
+                string[] ar = arr[0].Split(',');
+                PlayersLocation[int.Parse(arr[2])] = new Point(int.Parse(ar[0]), int.Parse(ar[1]));
+                Clients[int.Parse(arr[2])].location = PlayersLocation[int.Parse(arr[2])];
+            }
 
             //if winning message
             //go to WinningForm with the playerNumber
+            else if (arr.Length == 2)
+            {
+                WinningForm win = new WinningForm(int.Parse(arr[2]));
+                win.Show();
+                if (this.InvokeRequired)
+                    this.Invoke(new MethodInvoker(delegate
+                    {
+                        this.Visible = false;
+
+                    }));
+                else
+                    this.Visible = false;
+            }
+            
         }
 
         void SendLocationToServer()
@@ -318,27 +358,92 @@ namespace NetworkProject
         {
             Client c = (Client)client;
             //recieve message and parse it
+            
+
+            IPEndPoint tempiep = new IPEndPoint(IPAddress.Any, 11000);
+            Socket clientUDP = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+
+            clientUDP.Bind(tempiep);
+            EndPoint ep = (EndPoint)tempiep;
+            byte[] bytearr= new byte[1024];
+
+            int recv = clientUDP.ReceiveFrom(bytearr, ref ep);
+            string message = Encoding.ASCII.GetString(bytearr, 0, recv);
 
             //if Winning Message
             //call BroadCastTheWinnerIs(playerNumber)
             //go to WinningForm
 
-            //if LocationMessage
-            //call BraodCastLocation(player number)
-            //call BroadCastWhoseTurn(player number)
+
+            if (message.Equals("w"))
+            {
+                BroadCastTheWinnerIs(c.Rank);
+                WinningForm win = new WinningForm(c.Rank);
+                win.Show();
+                if (this.InvokeRequired)
+                    this.Invoke(new MethodInvoker(delegate
+                    {
+                        this.Visible = false;
+
+                    }));
+                else
+                    this.Visible = false;
+            }
+            else
+            {
+                //if LocationMessage
+                //call BraodCastLocation(player number)
+                //call BroadCastWhoseTurn(player number)
+
+                BroadCastLocation(c.Rank);
+                BroadCastWhoseTurn(c.Rank);
+            }
+
+            
         }
         void BroadCastLocation(int playerNumber)
         {
             //here send the mssage to all clients, containing the location of PlayersLocation[playerNumber] and attach its IP and playerNumber
+            IPEndPoint tempiep = new IPEndPoint(IPAddress.Any, 11000);
+            Socket clientUDP = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+
+            clientUDP.Bind(tempiep);
+            EndPoint ep = (EndPoint)tempiep;
+            byte[] bytearr = Encoding.ASCII.GetBytes(PlayersLocation[myIndex] + ";" +currentPlayer.RemoteEndPoint.ToString() +";" + playerNumber);
+
+            clientUDP.SendTo(bytearr, new IPEndPoint(IPAddress.Broadcast, 15000));
         }
         void BroadCastWhoseTurn(int playerNumber)
         {
             //see in the client list which 1 has the turn to play after playerNumber
             //here send the message to all clients, containing the IP only
+            IPEndPoint tempiep = new IPEndPoint(IPAddress.Any, 11000);
+            Socket clientUDP = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+
+            clientUDP.Bind(tempiep);
+            EndPoint ep = (EndPoint)tempiep;
+            int x;
+            if (playerNumber == Clients.Count - 1)
+                x = 0;
+            else
+                x = playerNumber + 1;
+            byte[] bytearr = Encoding.ASCII.GetBytes(Clients[x].IP);
+            
+            clientUDP.SendTo(bytearr, new IPEndPoint(IPAddress.Broadcast, 15000));
         }
         void BroadCastTheWinnerIs(int playerNumber)
         {
             //send to all clients message, containing IP,playerNumber
+            IPEndPoint tempiep = new IPEndPoint(IPAddress.Any, 11000);
+            Socket clientUDP = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+
+            clientUDP.Bind(tempiep);
+            EndPoint ep = (EndPoint)tempiep;
+            byte[] bytearr = Encoding.ASCII.GetBytes(currentPlayer.RemoteEndPoint.ToString() + ";" + playerNumber.ToString());
+
+
+           clientUDP.SendTo(bytearr, new IPEndPoint(IPAddress.Broadcast,15000));
+
         }
     }
 }

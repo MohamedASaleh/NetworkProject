@@ -15,11 +15,15 @@ namespace NetworkProject
         public Socket player;
         public int Rank = -1;
         public string IP;
+        public bool CurrentPlayer;
+        public Point location;
 
         public Client(string ip, int rank)
         {
             IP = ip;
             Rank = rank;
+            CurrentPlayer = false;
+            location = new Point(0, 0);
         }
     }
 }

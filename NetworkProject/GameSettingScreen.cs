@@ -33,11 +33,7 @@ namespace NetworkProject
         //Form Constructor
         public GameSettingScreen(bool isServer, IPAddress IP)
         {
-            //System.Windows.Forms.Timer timer = new System.Windows.Forms.Timer();
-            //timer.Interval = (1 * 100); // 100 msecs
-            //timer.Tick += new EventHandler(timer_Tick);
-            //timer.Start();
-
+          
             serverIP = IP;
             isserver = isServer;
             numberOfPlayers = 0;
@@ -52,9 +48,7 @@ namespace NetworkProject
                 //to be added in a thread to not hault the program
                 Thread t = new Thread(new ParameterizedThreadStart(JoinServer));
                 t.Start(IP);
-
-                //Thread t = new Thread(RecieveDataFromServer);
-                //t.Start();
+                
             }
             else
             {
@@ -97,7 +91,6 @@ namespace NetworkProject
             tempServer.Bind(tempiep);
             EndPoint ep = (EndPoint)tempiep;
 
-            //not yet tested
             while (true)
             {
                 byteArr = new byte[1024];
@@ -288,22 +281,7 @@ namespace NetworkProject
         {
             Application.Exit();
         }
-
-        //private void timer_Tick(object sender, EventArgs e)
-        //{
-        //    if (isserver)
-        //    { 
-        //        byte[] arr = Encoding.ASCII.GetBytes(numberOfPlayers.ToString());
-
-        //        currentSocket.Send(arr);
-
-        //    }
-        //    else
-        //    {
-
-        //    }
-        //}
-
+       
 
     }
 }
