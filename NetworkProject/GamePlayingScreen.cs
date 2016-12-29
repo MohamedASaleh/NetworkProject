@@ -188,14 +188,13 @@ namespace NetworkProject
             Random diceNumber = new Random();
             int horray = diceNumber.Next(1, 7);
             textBox1.Text = horray.ToString();
-            calcnewPositions(PlayersLocation[0].X, PlayersLocation[0].Y, horray);
-
+            Point location = calcnewPositions(PlayersLocation[0].X, PlayersLocation[0].Y, horray);
+            Point winningLocation = new Point(0, 9);
             if (IsServer)
             {
                 //call BroadCastLocation(0) as the server index is always 0 in the client list
                 //call BroadCastWhoseTurn(0) to see which player will play after server
                 BroadCastLocation(0);
-
                 BroadCastWhoseTurn(0);
             }
 
@@ -203,10 +202,15 @@ namespace NetworkProject
             {
                 //if final location is the winning location then call the function SendTheWinnerIsMeToServer()
                 //else send the final location to server by calling SendLocationToServer()
+                if (location.Equals(winningLocation))
 
+                    SendTheWinnerIsMeToServer();
+
+                else
+                    SendLocationToServer();
             }
         }
-        private void calcnewPositions(int x, int y, int dice)
+        private Point calcnewPositions(int x, int y, int dice)
         {
             if (y % 2 == 0)
             {
@@ -276,6 +280,8 @@ namespace NetworkProject
                     draw_new_positions(x, y);
                 }
             }
+            Point location = new Point(x, y);
+            return location;
         }
         private void draw_new_positions(int x, int y)
         {
@@ -305,7 +311,8 @@ namespace NetworkProject
             //enable "RollTheDice" button and play
             //else keep it disabled
             if (!message.Contains(";"))
-            { if (Clients[myIndex].IP.Equals(message))
+            {
+                if (Clients[myIndex].IP.Equals(message))
                     if (Clients[myIndex].CurrentPlayer)
                         btnRollTheDice.Enabled = true;
 
@@ -334,7 +341,7 @@ namespace NetworkProject
                 else
                     this.Visible = false;
             }
-            
+
         }
 
         void SendLocationToServer()
@@ -342,12 +349,16 @@ namespace NetworkProject
             //use the currentPlayer socket to send to server "PlayersLocation[myIndex]"
             //message should look like this:
             //IP#PlayersLocation[myIndex]#
+            byte[] arr = Encoding.ASCII.GetBytes(Clients[myIndex].IP + "#" + PlayersLocation[myIndex] + "#");
+            currentPlayer.Send(arr);
         }
         void SendTheWinnerIsMeToServer()
         {
             //use the currentPlayer socket to send to server the winner message
             //message should look like this:
             //IP#
+            byte[] arr = Encoding.ASCII.GetBytes(Clients[myIndex].IP + "#");
+            currentPlayer.Send(arr);
         }
 
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -358,14 +369,14 @@ namespace NetworkProject
         {
             Client c = (Client)client;
             //recieve message and parse it
-            
+
 
             IPEndPoint tempiep = new IPEndPoint(IPAddress.Any, 11000);
             Socket clientUDP = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
 
             clientUDP.Bind(tempiep);
             EndPoint ep = (EndPoint)tempiep;
-            byte[] bytearr= new byte[1024];
+            byte[] bytearr = new byte[1024];
 
             int recv = clientUDP.ReceiveFrom(bytearr, ref ep);
             string message = Encoding.ASCII.GetString(bytearr, 0, recv);
@@ -399,7 +410,7 @@ namespace NetworkProject
                 BroadCastWhoseTurn(c.Rank);
             }
 
-            
+
         }
         void BroadCastLocation(int playerNumber)
         {
@@ -409,7 +420,7 @@ namespace NetworkProject
 
             clientUDP.Bind(tempiep);
             EndPoint ep = (EndPoint)tempiep;
-            byte[] bytearr = Encoding.ASCII.GetBytes(PlayersLocation[myIndex] + ";" +currentPlayer.RemoteEndPoint.ToString() +";" + playerNumber);
+            byte[] bytearr = Encoding.ASCII.GetBytes(PlayersLocation[myIndex] + ";" + currentPlayer.RemoteEndPoint.ToString() + ";" + playerNumber);
 
             clientUDP.SendTo(bytearr, new IPEndPoint(IPAddress.Broadcast, 15000));
         }
@@ -428,7 +439,7 @@ namespace NetworkProject
             else
                 x = playerNumber + 1;
             byte[] bytearr = Encoding.ASCII.GetBytes(Clients[x].IP);
-            
+
             clientUDP.SendTo(bytearr, new IPEndPoint(IPAddress.Broadcast, 15000));
         }
         void BroadCastTheWinnerIs(int playerNumber)
@@ -439,10 +450,10 @@ namespace NetworkProject
 
             clientUDP.Bind(tempiep);
             EndPoint ep = (EndPoint)tempiep;
-            byte[] bytearr = Encoding.ASCII.GetBytes(currentPlayer.RemoteEndPoint.ToString() + ";" + playerNumber.ToString());
+            byte[] bytearr = Encoding.ASCII.GetBytes(Clients[playerNumber].IP + ";" + playerNumber.ToString());
 
 
-           clientUDP.SendTo(bytearr, new IPEndPoint(IPAddress.Broadcast,15000));
+            clientUDP.SendTo(bytearr, new IPEndPoint(IPAddress.Broadcast, 15000));
 
         }
     }
