@@ -126,7 +126,7 @@ namespace NetworkProject
             
             GenerateSnakesAndLadders();
             char[,] board = GenerateBoard(snakes, ladders);
-            GamePlayingScreen gpc = new GamePlayingScreen(board, snakes, ladders, null, numberOfPlayers, currentSocket, false);
+            GamePlayingScreen gpc = new GamePlayingScreen(board, snakes, ladders,clients, numberOfPlayers, currentSocket, false);
             gpc.Show();
             if (this.InvokeRequired)
                 this.Invoke(new MethodInvoker(delegate

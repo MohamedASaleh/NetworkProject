@@ -37,7 +37,6 @@ namespace NetworkProject
             Snakes = snakes;
             Ladders = ladders;
             currentPlayer = me;
-            numberOfPlayers = 1;
             PlayersLocation = new List<Point>();
             clientUDP = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
             tempiep = new IPEndPoint(IPAddress.Any, 10000);
