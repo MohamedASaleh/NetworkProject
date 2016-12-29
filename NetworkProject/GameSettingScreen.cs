@@ -130,12 +130,7 @@ namespace NetworkProject
             //this function in different thread as it will halt the application during recieving from server
             int numberOfPlayers = (int)obj;
 
-            //write code to recieve (numberOfPlayers)
-            /*
-            byte[] arr = new byte[1024];
-            int x = currentSocket.Receive(arr);
-            numberOfPlayers = int.Parse(Encoding.ASCII.GetString(arr,0,x));
-            */
+            
             GenerateSnakesAndLadders();
             char[,] board = GenerateBoard(snakes, ladders);
             GamePlayingScreen gpc = new GamePlayingScreen(board, snakes, ladders, null, numberOfPlayers, currentSocket, false);
