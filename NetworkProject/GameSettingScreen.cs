@@ -127,7 +127,6 @@ namespace NetworkProject
             GenerateSnakesAndLadders();
             char[,] board = GenerateBoard(snakes, ladders);
             GamePlayingScreen gpc = new GamePlayingScreen(board, snakes, ladders, null, numberOfPlayers, currentSocket, false);
-            gpc.ShowDialog();
             if (this.InvokeRequired)
                 this.Invoke(new MethodInvoker(delegate
                 {
@@ -136,6 +135,8 @@ namespace NetworkProject
                 }));
             else
                 this.Visible = false;
+            gpc.ShowDialog();
+            
         }
 
 
@@ -215,7 +216,6 @@ namespace NetworkProject
             GenerateSnakesAndLadders();
             char[,] board = GenerateBoard(snakes, ladders);
             GamePlayingScreen gpc = new GamePlayingScreen(board, snakes, ladders, clients, clients.Count, currentSocket, true);
-            gpc.Show();
             if (this.InvokeRequired)
                 this.Invoke(new MethodInvoker(delegate
                 {
@@ -224,6 +224,8 @@ namespace NetworkProject
                 }));
             else
                 this.Visible = false;
+            gpc.ShowDialog();
+            
         }
         Random r;
 
