@@ -380,7 +380,7 @@ namespace NetworkProject
             //message should look like this:
             //IP#
             byte[] arr = Encoding.ASCII.GetBytes(Clients[myIndex].IP + "#");
-            clientUDP.SendTo(arr, new IPEndPoint(IPAddress.Broadcast, 11000));
+            clientUDP.SendTo(arr, new IPEndPoint(IPAddress.Broadcast, 14000));
         }
 
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -435,7 +435,7 @@ namespace NetworkProject
 
             byte[] bytearr = Encoding.ASCII.GetBytes(PlayersLocation[playerNumber] + ";" + Clients[playerNumber].IP + ";" + playerNumber);
 
-            clientUDP.SendTo(bytearr, new IPEndPoint(IPAddress.Broadcast, 11000));
+            clientUDP.SendTo(bytearr, new IPEndPoint(IPAddress.Broadcast, 14000));
         }
         void BroadCastWhoseTurn(int playerNumber)
         {
@@ -449,7 +449,7 @@ namespace NetworkProject
                 x = playerNumber + 1;
             byte[] bytearr = Encoding.ASCII.GetBytes(Clients[x].IP);
 
-            clientUDP.SendTo(bytearr, new IPEndPoint(IPAddress.Broadcast, 11000));
+            clientUDP.SendTo(bytearr, new IPEndPoint(IPAddress.Broadcast, 14000));
         }
         void BroadCastTheWinnerIs(int playerNumber)
         {
@@ -458,7 +458,7 @@ namespace NetworkProject
             byte[] bytearr = Encoding.ASCII.GetBytes(Clients[playerNumber].IP + ";" + playerNumber.ToString());
 
 
-            clientUDP.SendTo(bytearr, new IPEndPoint(IPAddress.Broadcast, 11000));
+            clientUDP.SendTo(bytearr, new IPEndPoint(IPAddress.Broadcast, 14000));
 
         }
     }

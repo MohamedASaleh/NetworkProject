@@ -159,7 +159,7 @@ namespace NetworkProject
             IPAddress[] IPaddresses = Dns.GetHostAddresses(Dns.GetHostName());
             IPEndPoint serverEP = new IPEndPoint(IPaddresses[IPaddresses.Length - 1], port);
             currentSocket.Bind(serverEP);
-            currentSocket.Listen(5);
+            currentSocket.Listen(8);
             Client serverClient = new Client(IPaddresses[IPaddresses.Length - 1].ToString(), numberOfPlayers);
             clients.Add(serverClient);
             numberOfPlayers++;
@@ -210,6 +210,7 @@ namespace NetworkProject
 
             byte[] arr = Encoding.ASCII.GetBytes(clients.Count.ToString());
             tempServer.SendTo(arr, new IPEndPoint(IPAddress.Broadcast, 11000));
+            
 
             //generate board
 
