@@ -322,69 +322,70 @@ namespace NetworkProject
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         void RecieveFromServer()
         {
-            while(true){ 
-            IPEndPoint ipendpoint = new IPEndPoint(IPAddress.Any, 9000);
-            EndPoint endpoint = (EndPoint)ipendpoint;
-            Socket udp = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-            udp.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-            udp.Bind(endpoint);
-            //use the currentPlayer socket to recieve from the server
-            byte[] byteArr = new byte[1024];
-            int recv = udp.ReceiveFrom(byteArr, ref ep);
-
-
-            //parse the recieved message
-
-            string message = Encoding.ASCII.GetString(byteArr, 0, recv);
-
-            string[] arr;
-            arr = message.Split(';');
-
-
-            //if turn message check if the IP matched with my IP
-            //then check if currentPlayer boolean = true
-            //enable "RollTheDice" button and play
-            //else keep it disabled
-            if (!message.Contains(";"))
+            while (true)
             {
-                if (Clients[myIndex].IP.Equals(message))
+                IPEndPoint ipendpoint = new IPEndPoint(IPAddress.Any, 9000);
+                EndPoint endpoint = (EndPoint)ipendpoint;
+                Socket udp = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+                udp.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+                udp.Bind(endpoint);
+                //use the currentPlayer socket to recieve from the server
+                byte[] byteArr = new byte[1024];
+                int recv = udp.ReceiveFrom(byteArr, ref ep);
+
+
+                //parse the recieved message
+
+                string message = Encoding.ASCII.GetString(byteArr, 0, recv);
+
+                string[] arr;
+                arr = message.Split(';');
+
+
+                //if turn message check if the IP matched with my IP
+                //then check if currentPlayer boolean = true
+                //enable "RollTheDice" button and play
+                //else keep it disabled
+                if (!message.Contains(";"))
                 {
-                    Clients[myIndex].CurrentPlayer = true;
-                    btnRollTheDice.Enabled = true;
-                }
-            }
-            //if location message then update the location of player n
-            //update client n location
-            else if (arr.Length == 3)
-            {
-                string[] ar = arr[0].Split(',');
-                PlayersLocation[int.Parse(arr[2])] = new Point(int.Parse(ar[0]), int.Parse(ar[1]));
-                Clients[int.Parse(arr[2])].location = PlayersLocation[int.Parse(arr[2])];
-                DateTime delay = DateTime.Now.AddSeconds(3);
-                while (DateTime.Now < delay)
-                {
-                    Application.DoEvents();
-                }
-                DrawAllPlayers();
-            }
-
-            //if winning message
-            //go to WinningForm with the playerNumber
-            else if (arr.Length == 2)
-            {
-                WinningForm win = new WinningForm(int.Parse(arr[2]));
-                if (this.InvokeRequired)
-                    this.Invoke(new MethodInvoker(delegate
+                    if (Clients[myIndex].IP.Equals(message))
                     {
+                        Clients[myIndex].CurrentPlayer = true;
+                        btnRollTheDice.Enabled = true;
+                    }
+                }
+                //if location message then update the location of player n
+                //update client n location
+                else if (arr.Length == 3)
+                {
+                    string[] ar = arr[0].Split(',');
+                    PlayersLocation[int.Parse(arr[2])] = new Point(int.Parse(ar[0]), int.Parse(ar[1]));
+                    Clients[int.Parse(arr[2])].location = PlayersLocation[int.Parse(arr[2])];
+                    DateTime delay = DateTime.Now.AddSeconds(3);
+                    while (DateTime.Now < delay)
+                    {
+                        Application.DoEvents();
+                    }
+                    DrawAllPlayers();
+                }
+
+                //if winning message
+                //go to WinningForm with the playerNumber
+                else if (arr.Length == 2)
+                {
+                    WinningForm win = new WinningForm(int.Parse(arr[2]));
+                    if (this.InvokeRequired)
+                        this.Invoke(new MethodInvoker(delegate
+                        {
+                            this.Visible = false;
+
+                        }));
+                    else
                         this.Visible = false;
+                    win.ShowDialog();
 
-                    }));
-                else
-                    this.Visible = false;
-                win.ShowDialog();
-
+                }
             }
-        }
         }
 
         void SendLocationToServer()
