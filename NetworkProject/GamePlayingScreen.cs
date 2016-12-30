@@ -31,7 +31,7 @@ namespace NetworkProject
 
         public int getCurrentPlayerIndex()
         {
-            for (int i=0; i<Clients.Count; i++)
+            for (int i = 0; i < Clients.Count; i++)
             {
                 if (Clients[i].CurrentPlayer)
                     return i;
@@ -61,7 +61,7 @@ namespace NetworkProject
             DoubleBuffered = true;
             SetStyle(ControlStyles.OptimizedDoubleBuffer, true);
             DrawBoard();
-            
+
             if (IsServer)
             {
                 btnRollTheDice.Enabled = true;
@@ -206,7 +206,13 @@ namespace NetworkProject
             Random diceNumber = new Random();
             int horray = diceNumber.Next(1, 7);
             textBox1.Text = horray.ToString();
+            /*DateTime _desired = DateTime.Now.AddSeconds(3);
+            while (DateTime.Now < _desired)
+            {
+                Application.DoEvents();
+            }*/
             Point location = calcnewPositions(PlayersLocation[currentindex].X, PlayersLocation[currentindex].Y, horray);
+
             Point winningLocation = new Point(0, 9);
 
             if (IsServer)
@@ -305,7 +311,7 @@ namespace NetworkProject
         private void draw_new_positions(int x, int y)
         {
             int index = getCurrentPlayerIndex();
-            Thread.Sleep(3000);
+
             Bitmap bmp = new Bitmap(pictureBox1.Size.Width, pictureBox1.Size.Height);
             Graphics g = Graphics.FromImage(bmp);
             g.FillEllipse(new SolidBrush(PlayerColors[index]), new Rectangle(x * 50, (9 - y) * 50, 50, 50));
@@ -316,12 +322,20 @@ namespace NetworkProject
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         void RecieveFromServer()
         {
+            while(true){ 
+            IPEndPoint ipendpoint = new IPEndPoint(IPAddress.Any, 9000);
+            EndPoint endpoint = (EndPoint)ipendpoint;
+            Socket udp = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            udp.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+            udp.Bind(endpoint);
             //use the currentPlayer socket to recieve from the server
             byte[] byteArr = new byte[1024];
-            int recv = currentPlayer.ReceiveFrom(byteArr,ref ep);
+            int recv = udp.ReceiveFrom(byteArr, ref ep);
+
+
             //parse the recieved message
 
-            string message = Encoding.ASCII.GetString(byteArr);
+            string message = Encoding.ASCII.GetString(byteArr, 0, recv);
 
             string[] arr;
             arr = message.Split(';');
@@ -334,9 +348,10 @@ namespace NetworkProject
             if (!message.Contains(";"))
             {
                 if (Clients[myIndex].IP.Equals(message))
-                    if (Clients[myIndex].CurrentPlayer)
-                        btnRollTheDice.Enabled = true;
-
+                {
+                    Clients[myIndex].CurrentPlayer = true;
+                    btnRollTheDice.Enabled = true;
+                }
             }
             //if location message then update the location of player n
             //update client n location
@@ -345,6 +360,7 @@ namespace NetworkProject
                 string[] ar = arr[0].Split(',');
                 PlayersLocation[int.Parse(arr[2])] = new Point(int.Parse(ar[0]), int.Parse(ar[1]));
                 Clients[int.Parse(arr[2])].location = PlayersLocation[int.Parse(arr[2])];
+                DrawAllPlayers();
             }
 
             //if winning message
@@ -361,9 +377,9 @@ namespace NetworkProject
                 else
                     this.Visible = false;
                 win.ShowDialog();
-                
-            }
 
+            }
+        }
         }
 
         void SendLocationToServer()
@@ -379,6 +395,7 @@ namespace NetworkProject
             //use the currentPlayer socket to send to server the winner message
             //message should look like this:
             //IP#
+
             byte[] arr = Encoding.ASCII.GetBytes(Clients[myIndex].IP + "#");
             clientUDP.SendTo(arr, new IPEndPoint(IPAddress.Broadcast, 14000));
         }
@@ -415,7 +432,7 @@ namespace NetworkProject
                 else
                     this.Visible = false;
                 win.ShowDialog();
-                
+
             }
             else
             {
@@ -432,10 +449,16 @@ namespace NetworkProject
         void BroadCastLocation(int playerNumber)
         {
             //here send the mssage to all clients, containing the location of PlayersLocation[playerNumber] and attach its IP and playerNumber
+            IPEndPoint ipendpoint = new IPEndPoint(IPAddress.Any, 9000);
+            EndPoint endpoint = (EndPoint)ipendpoint;
+            Socket udp = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            udp.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+            udp.Bind(endpoint);
+            udp.EnableBroadcast = true;
+            byte[] bytearr = Encoding.ASCII.GetBytes(PlayersLocation[playerNumber].X + "," + PlayersLocation[playerNumber].Y + ";" + Clients[playerNumber].IP + ";" + playerNumber);
 
-            byte[] bytearr = Encoding.ASCII.GetBytes(PlayersLocation[playerNumber] + ";" + Clients[playerNumber].IP + ";" + playerNumber);
+            int sent = udp.SendTo(bytearr, new IPEndPoint(IPAddress.Broadcast, 9000));
 
-            clientUDP.SendTo(bytearr, new IPEndPoint(IPAddress.Broadcast, 14000));
         }
         void BroadCastWhoseTurn(int playerNumber)
         {
@@ -447,18 +470,31 @@ namespace NetworkProject
                 x = 0;
             else
                 x = playerNumber + 1;
+            IPEndPoint ipendpoint = new IPEndPoint(IPAddress.Any, 9000);
+            EndPoint endpoint = (EndPoint)ipendpoint;
+            Socket udp = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            udp.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+            udp.Bind(endpoint);
+            udp.EnableBroadcast = true;
+
             byte[] bytearr = Encoding.ASCII.GetBytes(Clients[x].IP);
 
-            clientUDP.SendTo(bytearr, new IPEndPoint(IPAddress.Broadcast, 14000));
+            int sent = udp.SendTo(bytearr, new IPEndPoint(IPAddress.Broadcast, 9000));
         }
         void BroadCastTheWinnerIs(int playerNumber)
         {
             //send to all clients message, containing IP,playerNumber
+            IPEndPoint ipendpoint = new IPEndPoint(IPAddress.Any, 9000);
+            EndPoint endpoint = (EndPoint)ipendpoint;
+            Socket udp = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            udp.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+            udp.Bind(endpoint);
+            udp.EnableBroadcast = true;
 
             byte[] bytearr = Encoding.ASCII.GetBytes(Clients[playerNumber].IP + ";" + playerNumber.ToString());
 
 
-            clientUDP.SendTo(bytearr, new IPEndPoint(IPAddress.Broadcast, 14000));
+            udp.SendTo(bytearr, new IPEndPoint(IPAddress.Broadcast, 9000));
 
         }
     }
