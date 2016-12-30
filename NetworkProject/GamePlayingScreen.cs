@@ -206,11 +206,11 @@ namespace NetworkProject
             Random diceNumber = new Random();
             int horray = diceNumber.Next(1, 7);
             textBox1.Text = horray.ToString();
-            /*DateTime _desired = DateTime.Now.AddSeconds(3);
-            while (DateTime.Now < _desired)
+            DateTime delay = DateTime.Now.AddSeconds(3);
+            while (DateTime.Now < delay)
             {
                 Application.DoEvents();
-            }*/
+            }
             Point location = calcnewPositions(PlayersLocation[currentindex].X, PlayersLocation[currentindex].Y, horray);
 
             Point winningLocation = new Point(0, 9);
@@ -360,6 +360,11 @@ namespace NetworkProject
                 string[] ar = arr[0].Split(',');
                 PlayersLocation[int.Parse(arr[2])] = new Point(int.Parse(ar[0]), int.Parse(ar[1]));
                 Clients[int.Parse(arr[2])].location = PlayersLocation[int.Parse(arr[2])];
+                DateTime delay = DateTime.Now.AddSeconds(3);
+                while (DateTime.Now < delay)
+                {
+                    Application.DoEvents();
+                }
                 DrawAllPlayers();
             }
 
