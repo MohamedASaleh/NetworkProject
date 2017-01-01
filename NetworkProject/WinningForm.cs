@@ -20,7 +20,7 @@ namespace NetworkProject
 
         private void WinningForm_FormClosing(object sender, FormClosingEventArgs e)
         {
-            Application.Exit();
+            Environment.Exit(Environment.ExitCode);
         }
     }
 }

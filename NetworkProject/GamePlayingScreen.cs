@@ -170,7 +170,7 @@ namespace NetworkProject
         }
         private void GamePlayingScreen_FormClosing(object sender, FormClosingEventArgs e)
         {
-            Application.Exit();
+            Environment.Exit(Environment.ExitCode);
         }
 
         void DrawAllPlayers()

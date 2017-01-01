@@ -73,7 +73,7 @@ namespace NetworkProject
 
         private void GameStart_FormClosing(object sender, FormClosingEventArgs e)
         {
-            Application.Exit();
+            Environment.Exit(Environment.ExitCode);
         }
     }
 }

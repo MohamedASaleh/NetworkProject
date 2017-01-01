@@ -282,9 +282,9 @@ namespace NetworkProject
         }
         private void GameSettingScreen_FormClosing(object sender, FormClosingEventArgs e)
         {
-            Application.Exit();
+            Environment.Exit(Environment.ExitCode);
         }
-       
+
 
     }
 }
