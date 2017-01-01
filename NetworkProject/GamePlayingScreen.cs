@@ -206,13 +206,10 @@ namespace NetworkProject
             Random diceNumber = new Random();
             int horray = diceNumber.Next(1, 7);
             textBox1.Text = horray.ToString();
-            DateTime delay = DateTime.Now.AddSeconds(3);
-            while (DateTime.Now < delay)
-            {
-                Application.DoEvents();
-            }
+            textBox1.Update();
+            btnRollTheDice.Update();
+            Thread.Sleep(3000);
             Point location = calcnewPositions(PlayersLocation[currentindex].X, PlayersLocation[currentindex].Y, horray);
-
             Point winningLocation = new Point(0, 9);
 
             if (IsServer)
@@ -220,6 +217,7 @@ namespace NetworkProject
                 //call BroadCastLocation(0) as the server index is always 0 in the client list
                 //call BroadCastWhoseTurn(0) to see which player will play after server
                 BroadCastLocation(0);
+                Thread.Sleep(2000);
                 BroadCastWhoseTurn(0);
             }
 
@@ -322,7 +320,8 @@ namespace NetworkProject
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         void RecieveFromServer()
         {
-            while (true)
+            bool recieve = true;
+            while (recieve)
             {
                 IPEndPoint ipendpoint = new IPEndPoint(IPAddress.Any, 9000);
                 EndPoint endpoint = (EndPoint)ipendpoint;
@@ -332,7 +331,6 @@ namespace NetworkProject
                 //use the currentPlayer socket to recieve from the server
                 byte[] byteArr = new byte[1024];
                 int recv = udp.ReceiveFrom(byteArr, ref ep);
-
 
                 //parse the recieved message
 
@@ -361,11 +359,7 @@ namespace NetworkProject
                     string[] ar = arr[0].Split(',');
                     PlayersLocation[int.Parse(arr[2])] = new Point(int.Parse(ar[0]), int.Parse(ar[1]));
                     Clients[int.Parse(arr[2])].location = PlayersLocation[int.Parse(arr[2])];
-                    DateTime delay = DateTime.Now.AddSeconds(3);
-                    while (DateTime.Now < delay)
-                    {
-                        Application.DoEvents();
-                    }
+                    Thread.Sleep(3000);
                     DrawAllPlayers();
                 }
 
@@ -382,6 +376,7 @@ namespace NetworkProject
                         }));
                     else
                         this.Visible = false;
+                    recieve = false;
                     win.ShowDialog();
 
                 }

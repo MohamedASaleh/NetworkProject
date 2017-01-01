@@ -70,5 +70,10 @@ namespace NetworkProject
                 btnJoinAsClient.Enabled = true;
             }
         }
+
+        private void GameStart_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            Application.Exit();
+        }
     }
 }

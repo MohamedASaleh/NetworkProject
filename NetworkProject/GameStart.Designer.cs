@@ -66,6 +66,7 @@
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "GameStart";
             this.Text = "Network Project";
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.GameStart_FormClosing);
             this.ResumeLayout(false);
 
         }
