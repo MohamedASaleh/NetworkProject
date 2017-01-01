@@ -27,13 +27,14 @@ namespace NetworkProject
         IPEndPoint tempiep;
         Socket clientUDP;
         EndPoint ep;
-
+      
 
         public int getCurrentPlayerIndex()
         {
+            IPAddress[] addresses = Dns.GetHostAddresses(Dns.GetHostName());
             for (int i = 0; i < Clients.Count; i++)
             {
-                if (Clients[i].CurrentPlayer)
+                if (Clients[i].IP.Equals(addresses[addresses.Length-1].ToString()))
                     return i;
             }
             return -1;
@@ -61,18 +62,16 @@ namespace NetworkProject
             DoubleBuffered = true;
             SetStyle(ControlStyles.OptimizedDoubleBuffer, true);
             DrawBoard();
-
+            myIndex = getCurrentPlayerIndex();
             if (IsServer)
             {
                 btnRollTheDice.Enabled = true;
                 myIndex = 0;
                 ////////////////////////////////
                 clients[myIndex].CurrentPlayer = true;
-                for (int i = 0; i < clients.Count; i++)
-                {
-                    Thread t = new Thread(new ParameterizedThreadStart(RecieveFromClients));
-                    t.Start(clients[i]);
-                }
+                     Thread t = new Thread(new ThreadStart(RecieveFromClients));
+                        t.Start();
+            
             }
             else
             {
@@ -217,7 +216,8 @@ namespace NetworkProject
                 //call BroadCastLocation(0) as the server index is always 0 in the client list
                 //call BroadCastWhoseTurn(0) to see which player will play after server
                 BroadCastLocation(0);
-                Thread.Sleep(2000);
+                DrawAllPlayers();
+                Thread.Sleep(5000);
                 BroadCastWhoseTurn(0);
             }
 
@@ -320,6 +320,7 @@ namespace NetworkProject
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         void RecieveFromServer()
         {
+            
             bool recieve = true;
             while (recieve)
             {
@@ -348,8 +349,14 @@ namespace NetworkProject
                 {
                     if (Clients[myIndex].IP.Equals(message))
                     {
-                        Clients[myIndex].CurrentPlayer = true;
-                        btnRollTheDice.Enabled = true;
+                        if (btnRollTheDice.InvokeRequired)
+                            btnRollTheDice.Invoke(new MethodInvoker(delegate
+                            {
+                                btnRollTheDice.Enabled = true;
+
+                            }));
+                        else
+                            btnRollTheDice.Enabled = true;
                     }
                 }
                 //if location message then update the location of player n
@@ -387,65 +394,85 @@ namespace NetworkProject
         {
             //use the currentPlayer socket to send to server "PlayersLocation[myIndex]"
             //message should look like this:
-            //IP#PlayersLocation[myIndex]#
-            byte[] arr = Encoding.ASCII.GetBytes(Clients[myIndex].IP + "#" + PlayersLocation[myIndex] + "#");
-            currentPlayer.Send(arr);
+            //player number#IP#PlayersLocation[myIndex]#
+            IPEndPoint ipendpoint = new IPEndPoint(IPAddress.Any, 9000);
+            EndPoint endpoint = (EndPoint)ipendpoint;
+            Socket udp = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            udp.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+            udp.Bind(endpoint);
+            udp.EnableBroadcast = true;
+            byte[] arr = Encoding.ASCII.GetBytes(myIndex + "#" + Clients[myIndex].IP + "#" + PlayersLocation[myIndex].X+","+PlayersLocation[myIndex].Y + "#");
+            udp.SendTo(arr, new IPEndPoint(IPAddress.Broadcast, 9000));
         }
         void SendTheWinnerIsMeToServer()
         {
             //use the currentPlayer socket to send to server the winner message
             //message should look like this:
-            //IP#
-
-            byte[] arr = Encoding.ASCII.GetBytes(Clients[myIndex].IP + "#");
-            clientUDP.SendTo(arr, new IPEndPoint(IPAddress.Broadcast, 14000));
+            //player number#IP#
+            IPEndPoint ipendpoint = new IPEndPoint(IPAddress.Any, 9000);
+            EndPoint endpoint = (EndPoint)ipendpoint;
+            Socket udp = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            udp.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+            udp.Bind(endpoint);
+            udp.EnableBroadcast = true;
+            byte[] arr = Encoding.ASCII.GetBytes(myIndex + "#" + Clients[myIndex].IP + "#");
+            udp.SendTo(arr, new IPEndPoint(IPAddress.Broadcast, 9000));
         }
 
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////////////////////////////////////SERVER///////////////////////////////////////////////////////////////////////////////////////////////////////
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-        void RecieveFromClients(Object client)
+        void RecieveFromClients()
         {
-            Client c = (Client)client;
-            //recieve message and parse it
-
-            byte[] bytearr = new byte[1024];
-
-            int recv = clientUDP.ReceiveFrom(bytearr, ref ep);
-            string message = Encoding.ASCII.GetString(bytearr, 0, recv);
-
-            //if Winning Message
-            //call BroadCastTheWinnerIs(playerNumber)
-            //go to WinningForm
-
-
-            if (message.Equals("w"))
+            while (true)
             {
-                BroadCastTheWinnerIs(c.Rank);
-                WinningForm win = new WinningForm(c.Rank);
-                if (this.InvokeRequired)
-                    this.Invoke(new MethodInvoker(delegate
+                //recieve message and parse it
+                IPEndPoint ipendpoint = new IPEndPoint(IPAddress.Any, 9000);
+                EndPoint endpoint = (EndPoint)ipendpoint;
+                Socket udp = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+                udp.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+                udp.Bind(endpoint);
+                udp.EnableBroadcast = true;
+                byte[] bytearr = new byte[1024];
+
+                int recv = udp.ReceiveFrom(bytearr, ref ep); 
+                string message = Encoding.ASCII.GetString(bytearr, 0, recv);
+
+                //if Winning Message
+                //call BroadCastTheWinnerIs(playerNumber)
+                //go to WinningForm
+
+                if (message.Contains("#"))
+                {
+                    string[] arr = message.Split('#');
+                    if (arr.Length==2)
                     {
-                        this.Visible = false;
+                        BroadCastTheWinnerIs(int.Parse(arr[0]));
+                        WinningForm win = new WinningForm(int.Parse(arr[0]));
+                        if (this.InvokeRequired)
+                            this.Invoke(new MethodInvoker(delegate
+                            {
+                                this.Visible = false;
 
-                    }));
-                else
-                    this.Visible = false;
-                win.ShowDialog();
+                            }));
+                        else
+                            this.Visible = false;
+                        win.ShowDialog();
+
+                    }
+                    else
+                    {
+                        //if LocationMessage
+                        //call BraodCastLocation(player number)
+                        //call BroadCastWhoseTurn(player number)
+
+                        BroadCastLocation(int.Parse(arr[0]));
+                        BroadCastWhoseTurn(int.Parse(arr[0]));
+                    }
+                }
 
             }
-            else
-            {
-                //if LocationMessage
-                //call BraodCastLocation(player number)
-                //call BroadCastWhoseTurn(player number)
-
-                BroadCastLocation(c.Rank);
-                BroadCastWhoseTurn(c.Rank);
-            }
-
-
         }
         void BroadCastLocation(int playerNumber)
         {
