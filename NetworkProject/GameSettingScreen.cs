@@ -29,6 +29,8 @@ namespace NetworkProject
         IPAddress[] a;
         IPEndPoint GEp;
 
+        bool Acceptloop;
+
 
         //Form Constructor
         public GameSettingScreen(bool isServer, IPAddress IP)
@@ -39,6 +41,7 @@ namespace NetworkProject
             numberOfPlayers = 0;
             port = 15000;
             InitializeComponent();
+            Acceptloop = true;
            
 
             if (!isServer)
@@ -173,40 +176,46 @@ namespace NetworkProject
         }
         void AcceptPlayers()
         {
+
             //write the code of server socket to accept incoming players
             //create an object from class Client and fill in its information
             //assign a rank for this created object (which is the client index in list) and add to list of clients
             //where Client is a class contains all information about client (mentioned in the project document)
-            newClient = currentSocket.Accept();
-            byte[] byteArr = new byte[1024];
-            int num = newClient.Receive(byteArr);
-            string temp = Encoding.ASCII.GetString(byteArr, 0, num);
-            Client newclient = new Client(temp, numberOfPlayers);
-            clients.Add(newclient);
-            numberOfPlayers++;
-
-            //send players IP to all clients
-            foreach (Client client in clients)
+            while (Acceptloop)
             {
-                byteArr = Encoding.ASCII.GetBytes(client.IP);
-                tempServer.SendTo(byteArr, new IPEndPoint(IPAddress.Broadcast, 11000));
-            }
+                newClient = currentSocket.Accept();
+                byte[] byteArr = new byte[1024];
+                int num = newClient.Receive(byteArr);
+                string temp = Encoding.ASCII.GetString(byteArr, 0, num);
+                Client newclient = new Client(temp, numberOfPlayers);
+                newclient.player = newClient;
+                clients.Add(newclient);
+                numberOfPlayers++;
 
-            //to access control from a thread 
-            if (listBox1.InvokeRequired)
-                listBox1.Invoke(new MethodInvoker(delegate
+                //send players IP to all clients
+                foreach (Client client in clients)
                 {
-                    listBox1.Items.Add("Player " + numberOfPlayers + ": " + temp);
-                }));
-            else
-                listBox1.Items.Add("Player " + numberOfPlayers + ": " + temp);
+                    byteArr = Encoding.ASCII.GetBytes(client.IP);
+                    tempServer.SendTo(byteArr, new IPEndPoint(IPAddress.Broadcast, 11000));
+                }
 
+                //to access control from a thread 
+                if (listBox1.InvokeRequired)
+                    listBox1.Invoke(new MethodInvoker(delegate
+                    {
+                        listBox1.Items.Add("Player " + numberOfPlayers + ": " + temp);
+                    }));
+                else
+                    listBox1.Items.Add("Player " + numberOfPlayers + ": " + temp);
+
+            }
         }
 
         private void btnStartGame_Click(object sender, EventArgs e)
         {
             //stop broadcasting the IP
             tmrBroadCastIP.Stop();
+            Acceptloop = false;
 
             byte[] arr = Encoding.ASCII.GetBytes(clients.Count.ToString());
             tempServer.SendTo(arr, new IPEndPoint(IPAddress.Broadcast, 11000));

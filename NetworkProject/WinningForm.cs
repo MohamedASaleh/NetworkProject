@@ -15,7 +15,7 @@ namespace NetworkProject
         public WinningForm(int playerNumber)
         {
             InitializeComponent();
-            Winner.Text += "" + playerNumber;
+            MessageBox.Show("The Winner Is: Player "+(playerNumber + 1));
         }
 
         private void WinningForm_FormClosing(object sender, FormClosingEventArgs e)
