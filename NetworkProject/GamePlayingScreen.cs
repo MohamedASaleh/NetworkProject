@@ -160,26 +160,8 @@ namespace NetworkProject
 
             }
 
-
-            int counter = 100;
-            for (int j = 0; j < 10; j++)
-            {
-                if (j % 2 == 0)
-                {
-                    for (int i = 0; i < 10; i++)
-                    {
-                        g.DrawString(counter-- + "", SystemFonts.DefaultFont, Brushes.Black, new PointF(i * 50, j * 50));
-                    }
-                }
-                else
-                {
-                    for (int i = 9; i >= 0; i--)
-                    {
-                        g.DrawString(counter-- + "", SystemFonts.DefaultFont, Brushes.Black, new PointF(i * 50, j * 50));
-                    }
-                }
-
-            }
+            
+            
 
 
             for (int i = 0; i < 11; i++)
