@@ -34,11 +34,17 @@ namespace NetworkProject
 
         private void btnStartAsServer_Click(object sender, EventArgs e)
         {
-            timer.Stop();
-            GameSettingScreen gsc = new GameSettingScreen(true, null);
-            gsc.Show();
-            this.Visible = false;
-            
+            try
+            {
+                timer.Stop();
+                GameSettingScreen gsc = new GameSettingScreen(true, null);
+                gsc.Show();
+                this.Visible = false;
+            }
+            catch(Exception)
+            {
+                MessageBox.Show("Please close WiFi and make Ethernet connection with at least one another device");
+            }
         }
 
         private void btnJoinAsClient_Click(object sender, EventArgs e)
